@@ -1,19 +1,20 @@
 [package]
-name = "cargo-sort"
-version = "2.0.1"
+name = "cargo-sort-fix"
+version = "2.0.2"
 authors = [
+    "ssrlive",
     "Devin R <devin.ragotzy@gmail.com>",
     "Andronik Ordian <write@reusable.software>",
 ]
 license = "MIT/Apache-2.0"
 description = "Check if tables and items in a .toml file are lexically sorted"
-repository = "https://github.com/DevinR528/cargo-sort"
-keywords = ["cargo", "subcommand", "dependencies", "sort", "check"]
+repository = "https://github.com/ssrlive/cargo-sort-fix"
+keywords = ["cargo", "subcommand", "dependencies", "sort", "check", "sort-fix"]
 categories = ["development-tools::cargo-plugins", "development-tools"]
 edition = "2021"
 readme = "README.md"
 exclude = ["examp", "fixtures"]
-default-run = "cargo-sort"
+default-run = "cargo-sort-fix"
 rust-version = "1.82"
 
 # [features]

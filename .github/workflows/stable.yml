@@ -2,9 +2,10 @@ name: Rust Stable
 
 on:
   push:
-    branches: [main]
   pull_request:
-    branches: [main]
+  workflow_dispatch:
+  schedule:
+    - cron: '20 4 * * *'  # Runs daily at midnight UTC
 
 jobs:
   check:

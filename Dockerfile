@@ -10,10 +10,10 @@ COPY --from=planner /app/recipe.json recipe.json
 RUN cargo chef cook --release --recipe-path recipe.json
 COPY . .
 RUN cargo build --verbose --locked --release
-RUN strip /app/target/release/cargo-sort
+RUN strip /app/target/release/cargo-sort-fix
 
 FROM debian:buster-slim AS runtime
 WORKDIR /app
-COPY --from=builder /app/target/release/cargo-sort /usr/local/bin
+COPY --from=builder /app/target/release/cargo-sort-fix /usr/local/bin
 USER 1000:1000
-ENTRYPOINT ["cargo-sort"]
+ENTRYPOINT ["cargo-sort-fix"]

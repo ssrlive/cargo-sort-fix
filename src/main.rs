@@ -30,17 +30,17 @@ macro_rules! version_info {
     };
 }
 
-const fn about_info() -> &'static str {
-    concat!(
+fn about_info() -> String {
+    format!(
+        "{}\n{}\n{}",
         version_info!(),
-        "\n",
-        crate_authors!(),
-        "\nEnsure Cargo.toml dependency tables are sorted.",
+        crate_authors!(", "),
+        "Ensure Cargo.toml dependency tables are sorted.",
     )
 }
 
 #[derive(clap::Parser, Debug)]
-#[command(author = crate_authors!(), version = version_0!(), about = about_info(), bin_name = "cargo sort", after_help = EXTRA_HELP)]
+#[command(author = crate_authors!(", "), version = version_0!(), about = about_info(), bin_name = "cargo sort-fix", after_help = EXTRA_HELP)]
 pub struct Cli {
     /// sets cwd, must contain a Cargo.toml file
     #[arg(value_name = "CWD")]
@@ -176,9 +176,9 @@ fn check_toml(path: &str, cli: &Cli, config: &Config) -> IoResult<bool> {
 
 fn _main() -> IoResult<()> {
     let mut args: Vec<String> = std::env::args().collect();
-    // remove "sort" when invoked `cargo sort` sort is the first arg
+    // remove "sort-fix" when invoked `cargo sort-fix` sort-fix is the first arg
     // https://github.com/rust-lang/cargo/issues/7653
-    if args.len() > 1 && args[1] == "sort" {
+    if args.len() > 1 && args[1] == "sort-fix" {
         args.remove(1);
     }
     let cli = <Cli as clap::Parser>::parse_from(args);

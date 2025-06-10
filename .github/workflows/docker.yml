@@ -18,8 +18,8 @@ jobs:
         uses: docker/metadata-action@v5
         with:
           images: |
-            devinr528/cargo-sort
-            ghcr.io/${{ github.repository_owner }}/cargo-sort
+            ssrlive/cargo-sort-fix
+            ghcr.io/${{ github.repository_owner }}/cargo-sort-fix
           tags: |
             type=schedule
             type=ref,event=branch
@@ -44,7 +44,7 @@ jobs:
         if: github.event_name != 'pull_request'
         uses: docker/login-action@v3
         with:
-          username: devinr528
+          username: ssrlive
           password: ${{ secrets.DOCKER_TOKEN }}
 
       - name: Login to GHCR

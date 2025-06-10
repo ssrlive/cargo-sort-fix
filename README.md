@@ -1,17 +1,18 @@
-# Cargo Sort
+# Cargo Sort-fix
 
-[![Crates.io](https://img.shields.io/crates/v/cargo-sort.svg)](https://crates.io/crates/cargo-sort)
-[![Rust Stable](https://github.com/DevinR528/cargo-sort-ck/actions/workflows/stable.yml/badge.svg)](https://github.com/DevinR528/cargo-sort-ck/actions/workflows/stable.yml)
+[![Crates.io](https://img.shields.io/crates/v/cargo-sort-fix.svg)](https://crates.io/crates/cargo-sort-fix)
 
-A tool to check that your Cargo.toml dependencies are sorted alphabetically. Project created as a solution to @dtolnay's [request for implementation #29](https://github.com/dtolnay/request-for-implementation/issues/29). Cross platform implementation, windows compatible.  Terminal coloring works on both cmd.exe and powershell. Checks/sorts by key in tables and also nested table headers (does not sort the items in a nested header, sorts the table itself). `cargo sort` uses [toml-edit](https://github.com/ordian/toml_edit) to parse the toml file into something useful.
+**Since the original author of `cargo-sort` is no longer active and the successor maintainer has a bad attitude towards contributors, I forked that project to `cargo-sort-fix`.**
+
+A tool to check that your Cargo.toml dependencies are sorted alphabetically. Project created as a solution to @dtolnay's [request for implementation #29](https://github.com/dtolnay/request-for-implementation/issues/29). Cross platform implementation, windows compatible.  Terminal coloring works on both cmd.exe and powershell. Checks/sorts by key in tables and also nested table headers (does not sort the items in a nested header, sorts the table itself). `cargo sort-fix` uses [toml-edit](https://github.com/ordian/toml_edit) to parse the toml file into something useful.
 
 The `--format` option may result in improperly formatted toml; please file an issue.
 
 ## Use
 
-There are three modes cargo-sort can be used in:
+There are three modes cargo-sort-fix can be used in:
  * **default**
-    - No flags set cargo-sort will write the sorted result over the input Cargo.toml file.
+    - No flags set cargo-sort-fix will write the sorted result over the input Cargo.toml file.
  * **-c or --check**
     - Will fail with a non-zero exit code if the file is unsorted.
  * **-n or --no-format**
@@ -30,7 +31,7 @@ There are three modes cargo-sort can be used in:
 
 ### Config
 
-`cargo sort` uses a config file when formatting called `tomlfmt.toml`. This is optional and defaults will
+`cargo sort-fix` uses a config file when formatting called `tomlfmt.toml`. This is optional and defaults will
 be used if not found in the current working dir.
 
 Here are the defaults when no `tomlfmt.toml` is found
@@ -75,20 +76,20 @@ If you have a header to add open a PR, they are welcome.
 
 # Install
 ```bash
-cargo install cargo-sort
+cargo install cargo-sort-fix --git https://github.com/ssrlive/cargo-sort-fix
 ```
 
 ## pre-commit
 
-If you use [pre-commit](https://pre-commit.com/) in your project, you can add cargo-sort as hook by
+If you use [pre-commit](https://pre-commit.com/) in your project, you can add cargo-sort-fix as hook by
 adding the following entry to your `.pre-commit-config.yaml` configuration:
 
 ```yaml
 repos:
-- repo: https://github.com/DevinR528/cargo-sort
-  rev: v1.0.4
+- repo: https://github.com/ssrlive/cargo-sort-fix
+  rev: v2.0.2
   hooks:
-  - id: cargo-sort
+  - id: cargo-sort-fix
 ```
 
 Please make sure to set `rev` to the latest tag of this repo as the tag shown here might not always
@@ -96,23 +97,23 @@ be updated to the latest version.
 
 # Run
 
-Thanks to [dspicher](https://github.com/dspicher) for [issue #4](https://github.com/DevinR528/cargo-sort-ck/issues/4) you can now invoke `cargo sort` check as a cargo subcommand
+Thanks to [dspicher](https://github.com/dspicher) for [issue #4](https://github.com/DevinR528/cargo-sort-ck/issues/4) you can now invoke `cargo sort-fix` check as a cargo subcommand
 
 ```bash
-cargo sort [FLAGS] [path]
+cargo sort-fix [FLAGS] [path]
 ```
 Wildcard expansion is supported so you can do this
 ```bash
-cargo-sort [FLAGS] [path/to/*/Cargo.toml | path/to/*]
+cargo-sort-fix [FLAGS] [path/to/*/Cargo.toml | path/to/*]
 ```
 or any other pattern that is supported by your terminal. This also means multiple
 paths work.
 ```bash
-cargo-sort [FLAGS] path/to/a path/to/b path/to/c/Cargo.toml
+cargo-sort-fix [FLAGS] path/to/a path/to/b path/to/c/Cargo.toml
 ```
-Finally cargo sort has the --workspace flag and will sort each Cargo.toml file in a workspace
+Finally cargo sort-fix has the --workspace flag and will sort each Cargo.toml file in a workspace
 ```bash
-cargo-sort -w/--workspace
+cargo-sort-fix -w/--workspace
 ```
 
 These are all valid. File names and extensions can be used on some of the paths but not others, if
@@ -120,24 +121,30 @@ left off the tool will default to Cargo.toml.
 
 
 ```bash
-cargo sort 1.0.0
-Devin R <devin.ragotzy@gmail.com>
+cargo sort-fix -h
+```
+```plaintext
+cargo-sort-fix v2.0.2
+ssrlive, Devin R <devin.ragotzy@gmail.com>, Andronik Ordian <write@reusable.software>
 Ensure Cargo.toml dependency tables are sorted.
 
-USAGE:
-    cargo-sort [FLAGS] [CWD]
+Usage: cargo sort-fix [OPTIONS] [CWD]...
 
-FLAGS:
-    -c, --check        exit with non-zero if Cargo.toml is unsorted, overrides default behavior
-    -f, --format       formats the given Cargo.toml according to tomlfmt.toml
-    -g, --grouped      when sorting groups of key value pairs blank lines are kept
-    -h, --help         Prints help information
-    -p, --print        prints Cargo.toml, lexically sorted, to stdout
-    -V, --version      Prints version information
-    -w, --workspace    checks every crate in a workspace
+Arguments:
+  [CWD]...  sets cwd, must contain a Cargo.toml file
 
-ARGS:
-    <CWD>...    sets cwd, must contain a Cargo.toml file
+Options:
+  -c, --check          Returns non-zero exit code if Cargo.toml is unsorted, overrides default behavior
+  -p, --print          Prints Cargo.toml, lexically sorted, to stdout
+  -n, --no-format      Skips formatting after sorting
+      --check-format   Also returns non-zero exit code if formatting changes
+  -w, --workspace      Checks every crate in a workspace
+  -g, --grouped        Keep blank lines when sorting groups of key value pairs
+  -o, --order <ORDER>  List the order tables should be written out (--order package,dependencies,features)
+  -h, --help           Print help
+  -V, --version        Print version
+
+NOTE: formatting is applied after the check for sorting so sorted but unformatted toml will not cause a failure
 ```
 
 # Docker
@@ -145,19 +152,19 @@ ARGS:
 Build the image:
 
 ```sh
-docker build -t cargo-sort .
+docker build -t cargo-sort-fix .
 ```
 
 Run the container:
 
 ```sh
-docker run -it --rm -v "$(pwd)/Cargo.toml":/app/Cargo.toml cargo-sort
+docker run -it --rm -v "$(pwd)/Cargo.toml":/app/Cargo.toml cargo-sort-fix
 ```
 
-Image is also available on [Docker Hub](https://hub.docker.com/r/devinr528/cargo-sort):
+Image is also available on [Docker Hub](https://hub.docker.com/r/ssrlive/cargo-sort-fix):
 
 ```sh
-docker run -it --rm -v "$(pwd)/Cargo.toml":/app/Cargo.toml devinr528/cargo-sort:latest
+docker run -it --rm -v "$(pwd)/Cargo.toml":/app/Cargo.toml ssrlive/cargo-sort-fix:latest
 ```
 
 # Examples
