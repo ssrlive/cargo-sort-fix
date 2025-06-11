@@ -57,12 +57,7 @@ enum Heading {
 }
 
 /// Returns a sorted toml `DocumentMut`.
-pub(crate) fn sort_toml(
-    input: &str,
-    matcher: Matcher<'_>,
-    group: bool,
-    ordering: &[String],
-) -> DocumentMut {
+pub(crate) fn sort_toml(input: &str, matcher: Matcher<'_>, group: bool, ordering: &[String]) -> DocumentMut {
     let mut ordering = ordering.to_owned();
     let mut toml = input.parse::<DocumentMut>().unwrap();
     // This takes care of `[workspace] members = [...]`
@@ -146,12 +141,7 @@ pub(crate) fn sort_toml(
     toml
 }
 
-fn nested_tables_with_key<'a>(
-    table: &'a Table,
-    path: &mut Vec<&'a str>,
-    key_name: &str,
-    result: &mut Vec<Vec<&'a str>>,
-) {
+fn nested_tables_with_key<'a>(table: &'a Table, path: &mut Vec<&'a str>, key_name: &str, result: &mut Vec<Vec<&'a str>>) {
     for (key, item) in table.iter() {
         path.push(key);
         if let Item::Table(inner) = item {
@@ -275,9 +265,7 @@ fn sort_by_group(table: &mut Table) {
 
         // If the item is a dotted table, grab the decor of the first item of the table
         // instead.
-        let decor = if let Some(first_in_dotted) =
-            v.as_table().filter(|t| t.is_dotted()).and_then(|t| t.key(t.iter().next()?.0))
-        {
+        let decor = if let Some(first_in_dotted) = v.as_table().filter(|t| t.is_dotted()).and_then(|t| t.key(t.iter().next()?.0)) {
             first_in_dotted.leaf_decor()
         } else {
             k.leaf_decor()
@@ -319,11 +307,7 @@ fn sort_by_group(table: &mut Table) {
     }
 }
 
-fn sort_lexicographical(
-    first_table: Option<usize>,
-    heading_order: &BTreeMap<(usize, String), Vec<Heading>>,
-    toml: &mut DocumentMut,
-) {
+fn sort_lexicographical(first_table: Option<usize>, heading_order: &BTreeMap<(usize, String), Vec<Heading>>, toml: &mut DocumentMut) {
     // Since the root table is always index 0 we add one
     let first_table_idx = first_table.unwrap_or_default() + 1;
     for (idx, heading) in heading_order.iter().flat_map(|(_, segs)| segs).enumerate() {
@@ -344,11 +328,7 @@ fn sort_lexicographical(
     }
 }
 
-fn sort_by_ordering(
-    ordering: &[String],
-    heading_order: &BTreeMap<(usize, String), Vec<Heading>>,
-    toml: &mut DocumentMut,
-) {
+fn sort_by_ordering(ordering: &[String], heading_order: &BTreeMap<(usize, String), Vec<Heading>>, toml: &mut DocumentMut) {
     let mut idx = 0;
     for heading in ordering {
         let mut matches: Vec<(&(usize, String), &Vec<Heading>)> = heading_order
@@ -403,11 +383,7 @@ fn sort_by_ordering(
             let a1_longest = extract_heading_segments(a_headings, heading);
             let b1_longest = extract_heading_segments(b_headings, heading);
             let ord = a1_longest.cmp(&b1_longest);
-            if ord == Ordering::Equal {
-                a_key.cmp(b_key)
-            } else {
-                ord
-            }
+            if ord == Ordering::Equal { a_key.cmp(b_key) } else { ord }
         });
 
         if !matches.is_empty() {
@@ -455,8 +431,7 @@ fn sort_by_ordering(
             tab.set_position(idx);
             idx += 1;
             walk_tables_set_position(tab, &mut idx);
-        } else if let Some(arrtab) = toml.as_table_mut()[heading].as_array_of_tables_mut()
-        {
+        } else if let Some(arrtab) = toml.as_table_mut()[heading].as_array_of_tables_mut() {
             for tab in arrtab.iter_mut() {
                 tab.set_position(idx);
                 idx += 1;

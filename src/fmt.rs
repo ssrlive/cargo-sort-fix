@@ -123,54 +123,23 @@ impl FromStr for Config {
 
         let toml = s.parse::<DocumentMut>().map_err(|_| "failed to parse as toml")?;
         Ok(Config {
-            always_trailing_comma: toml
-                .get("always_trailing_comma")
-                .and_then(Item::as_bool)
-                .unwrap_or_default(),
-            multiline_trailing_comma: toml
-                .get("multiline_trailing_comma")
-                .and_then(Item::as_bool)
-                .unwrap_or(true),
-            max_array_line_len: toml
-                .get("max_array_line_len")
-                .and_then(Item::as_integer)
-                .unwrap_or(80) as usize,
-            indent_count: toml.get("indent_count").and_then(Item::as_integer).unwrap_or(4)
-                as usize,
-            space_around_eq: toml
-                .get("space_around_eq")
-                .and_then(Item::as_bool)
-                .unwrap_or(true),
-            compact_arrays: toml
-                .get("compact_arrays")
-                .and_then(Item::as_bool)
-                .unwrap_or_default(),
-            compact_inline_tables: toml
-                .get("compact_inline_tables")
-                .and_then(Item::as_bool)
-                .unwrap_or_default(),
-            trailing_newline: toml
-                .get("trailing_newline")
-                .and_then(Item::as_bool)
-                .unwrap_or(true),
-            key_value_newlines: toml
-                .get("key_value_newlines")
-                .and_then(Item::as_bool)
-                .unwrap_or(true),
-            allowed_blank_lines: toml
-                .get("allowed_blank_lines")
-                .and_then(Item::as_integer)
-                .unwrap_or(1) as usize,
+            always_trailing_comma: toml.get("always_trailing_comma").and_then(Item::as_bool).unwrap_or_default(),
+            multiline_trailing_comma: toml.get("multiline_trailing_comma").and_then(Item::as_bool).unwrap_or(true),
+            max_array_line_len: toml.get("max_array_line_len").and_then(Item::as_integer).unwrap_or(80) as usize,
+            indent_count: toml.get("indent_count").and_then(Item::as_integer).unwrap_or(4) as usize,
+            space_around_eq: toml.get("space_around_eq").and_then(Item::as_bool).unwrap_or(true),
+            compact_arrays: toml.get("compact_arrays").and_then(Item::as_bool).unwrap_or_default(),
+            compact_inline_tables: toml.get("compact_inline_tables").and_then(Item::as_bool).unwrap_or_default(),
+            trailing_newline: toml.get("trailing_newline").and_then(Item::as_bool).unwrap_or(true),
+            key_value_newlines: toml.get("key_value_newlines").and_then(Item::as_bool).unwrap_or(true),
+            allowed_blank_lines: toml.get("allowed_blank_lines").and_then(Item::as_integer).unwrap_or(1) as usize,
             crlf: toml.get("crlf").and_then(Item::as_bool),
-            table_order: toml.get("table_order").and_then(Item::as_array).map_or(
-                DEF_TABLE_ORDER.iter().map(|&s| s.to_owned()).collect(),
-                |arr| {
-                    arr.into_iter()
-                        .filter_map(|v| v.as_str())
-                        .map(|s| s.to_owned())
-                        .collect()
-                },
-            ),
+            table_order: toml
+                .get("table_order")
+                .and_then(Item::as_array)
+                .map_or(DEF_TABLE_ORDER.iter().map(|&s| s.to_owned()).collect(), |arr| {
+                    arr.into_iter().filter_map(|v| v.as_str()).map(|s| s.to_owned()).collect()
+                }),
         })
     }
 }
@@ -229,11 +198,7 @@ fn fmt_value(value: &mut Value, config: &Config) {
 
                     // Handle prefix: Add newline and indent, preserve comments.
                     let new_prefix = if !prefix.is_empty() {
-                        prefix
-                            .lines()
-                            .map(|line| format!("{n_i}{}", line.trim()))
-                            .collect::<String>()
-                            + &n_i
+                        prefix.lines().map(|line| format!("{n_i}{}", line.trim())).collect::<String>() + &n_i
                     } else {
                         n_i
                     };
@@ -270,13 +235,7 @@ fn fmt_value(value: &mut Value, config: &Config) {
         // Since the above variants have fmt methods we can only ever
         // get here from a headed table (`[header] key = val`)
         val => {
-            if config.space_around_eq
-                && val
-                    .decor()
-                    .prefix()
-                    .and_then(RawString::as_str)
-                    .is_none_or(str::is_empty)
-            {
+            if config.space_around_eq && val.decor().prefix().and_then(RawString::as_str).is_none_or(str::is_empty) {
                 val.decor_mut().set_prefix(" ");
             }
         }
@@ -313,9 +272,9 @@ fn fmt_table(table: &mut Table, config: &Config) {
 
     let keys: Vec<_> = table.iter().map(|(k, _)| k.to_owned()).collect();
     for key in keys {
-        let is_value_for_space = table.get(&key).is_some_and(|item| {
-            item.is_value() && item.as_inline_table().is_none_or(|t| !t.is_dotted())
-        });
+        let is_value_for_space = table
+            .get(&key)
+            .is_some_and(|item| item.is_value() && item.as_inline_table().is_none_or(|t| !t.is_dotted()));
 
         let mut dec = table.key_mut(&key).unwrap();
         let dec = dec.leaf_decor_mut();
@@ -325,11 +284,7 @@ fn fmt_table(table: &mut Table, config: &Config) {
         // Check each item in the table for blank lines
         if config.key_value_newlines {
             if config.allowed_blank_lines < blank_lines {
-                dec.set_prefix(prefix.replacen(
-                    newline_pattern,
-                    "",
-                    blank_lines - config.allowed_blank_lines,
-                ));
+                dec.set_prefix(prefix.replacen(newline_pattern, "", blank_lines - config.allowed_blank_lines));
             }
         } else {
             dec.set_prefix(if prefix.contains('#') {
@@ -341,15 +296,8 @@ fn fmt_table(table: &mut Table, config: &Config) {
 
         // This is weirdly broken, inserts underscores into `[foo.bar]` table
         // headers. Revisit later.
-        if config.space_around_eq
-            && dec.suffix().and_then(RawString::as_str).is_none_or(str::is_empty)
-            && is_value_for_space
-        {
-            dec.set_suffix(format!(
-                "{}{}",
-                dec.suffix().and_then(RawString::as_str).unwrap_or(""),
-                ' '
-            ));
+        if config.space_around_eq && dec.suffix().and_then(RawString::as_str).is_none_or(str::is_empty) && is_value_for_space {
+            dec.set_suffix(format!("{}{}", dec.suffix().and_then(RawString::as_str).unwrap_or(""), ' '));
         }
 
         match table.get_mut(&key).unwrap() {
@@ -412,7 +360,7 @@ impl ValueExt for Value {
 mod test {
     use std::fs;
 
-    use super::{fmt_toml, Config, DocumentMut};
+    use super::{Config, DocumentMut, fmt_toml};
     use crate::test_utils::assert_eq;
 
     #[test]
@@ -527,7 +475,10 @@ integration = [
 ]
 "#;
         let mut toml = input.parse::<DocumentMut>().unwrap();
-        let cfg = Config { multiline_trailing_comma: false, ..Config::default() };
+        let cfg = Config {
+            multiline_trailing_comma: false,
+            ..Config::default()
+        };
         fmt_toml(&mut toml, &cfg);
         similar_asserts::assert_eq!(expected2, toml.to_string());
     }

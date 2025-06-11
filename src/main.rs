@@ -42,8 +42,7 @@ fn about_info() -> String {
 fn cargo_subcommand() -> String {
     let name = crate_name!();
     const PRIFIX: &str = "cargo-";
-    if name.starts_with(PRIFIX) {
-        let tail = name[PRIFIX.len()..].to_string();
+    if let Some(tail) = name.strip_prefix(PRIFIX) {
         format!("cargo {tail}")
     } else {
         name.to_owned()
@@ -113,8 +112,7 @@ fn check_toml(path: &str, cli: &Cli, config: &Config) -> IoResult<bool> {
 
     write_green("Checking ", format!("{}...", krate.to_string_lossy()))?;
 
-    let toml_raw = read_to_string(&path)
-        .map_err(|_| format!("No file found at: {}", path.display()))?;
+    let toml_raw = read_to_string(&path).map_err(|_| format!("No file found at: {}", path.display()))?;
 
     let crlf = toml_raw.contains("\r\n");
 
@@ -123,8 +121,7 @@ fn check_toml(path: &str, cli: &Cli, config: &Config) -> IoResult<bool> {
         config.crlf = Some(crlf);
     }
 
-    let mut sorted =
-        sort::sort_toml(&toml_raw, sort::MATCHER, cli.grouped, &config.table_order);
+    let mut sorted = sort::sort_toml(&toml_raw, sort::MATCHER, cli.grouped, &config.table_order);
     let mut sorted_str = sorted.to_string();
 
     let is_formatted =
@@ -150,17 +147,11 @@ fn check_toml(path: &str, cli: &Cli, config: &Config) -> IoResult<bool> {
     let is_sorted = toml_raw == sorted_str;
     if cli.check {
         if !is_sorted {
-            write_red(
-                "error: ",
-                format!("Dependencies for {} are not sorted", krate.to_string_lossy()),
-            )?;
+            write_red("error: ", format!("Dependencies for {} are not sorted", krate.to_string_lossy()))?;
         }
 
         if !is_formatted {
-            write_red(
-                "error: ",
-                format!("Cargo.toml for {} is not formatted", krate.to_string_lossy()),
-            )?;
+            write_red("error: ", format!("Cargo.toml for {} is not formatted", krate.to_string_lossy()))?;
         }
 
         return Ok(is_sorted && is_formatted);
@@ -168,18 +159,11 @@ fn check_toml(path: &str, cli: &Cli, config: &Config) -> IoResult<bool> {
 
     if !is_sorted {
         std::fs::write(&path, &sorted_str)?;
-        write_green(
-            "Finished: ",
-            format!("Cargo.toml for {:?} has been rewritten", krate.to_string_lossy()),
-        )?;
+        let msg = format!("Cargo.toml for {:?} has been rewritten", krate.to_string_lossy());
+        write_green("Finished: ", msg)?;
     } else {
-        write_green(
-            "Finished: ",
-            format!(
-                "Cargo.toml for {} is sorted already, no changes made",
-                krate.to_string_lossy()
-            ),
-        )?;
+        let msg = format!("Cargo.toml for {} is sorted already, no changes made", krate.to_string_lossy());
+        write_green("Finished: ", msg)?;
     }
 
     Ok(true)
@@ -194,8 +178,7 @@ fn _main() -> IoResult<()> {
     }
     let cli = <Cli as clap::Parser>::parse_from(args);
 
-    let cwd = std::env::current_dir()
-        .map_err(|e| format!("no current directory found: {e}"))?;
+    let cwd = std::env::current_dir().map_err(|e| format!("no current directory found: {e}"))?;
     let dir = cwd.to_string_lossy();
 
     let mut filtered_matches: Vec<String> = cli.cwd.clone();
@@ -211,24 +194,20 @@ fn _main() -> IoResult<()> {
             path.push("Cargo.toml");
         }
 
-        let raw_toml = read_to_string(&path)
-            .map_err(|_| format!("no file found at: {}", path.display()))?;
+        let raw_toml = read_to_string(&path).map_err(|_| format!("no file found at: {}", path.display()))?;
 
         let toml = raw_toml.parse::<DocumentMut>()?;
         let workspace = toml.get("workspace");
         if let Some(Item::Table(ws)) = workspace {
             // The workspace excludes, used to filter members by
-            let excludes: Vec<&str> =
-                ws.get("exclude").map_or_else(Vec::new, array_string_members);
+            let excludes: Vec<&str> = ws.get("exclude").map_or_else(Vec::new, array_string_members);
             for member in ws.get("members").map_or_else(Vec::new, array_string_members) {
                 // TODO: a better test wether to glob?
                 if member.contains('*') || member.contains('?') {
-                    'globs: for entry in glob::glob(&format!("{dir}/{member}"))
-                        .unwrap_or_else(|e| {
-                            write_red("error: ", format!("Glob failed: {e}")).unwrap();
-                            std::process::exit(1);
-                        })
-                    {
+                    'globs: for entry in glob::glob(&format!("{dir}/{member}")).unwrap_or_else(|e| {
+                        write_red("error: ", format!("Glob failed: {e}")).unwrap();
+                        std::process::exit(1);
+                    }) {
                         let path = entry?;
 
                         // The `check_toml` function expects only folders that it appends

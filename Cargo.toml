@@ -11,11 +11,11 @@ description = "Check if tables and items in a .toml file are lexically sorted"
 repository = "https://github.com/ssrlive/cargo-sort-fix"
 keywords = ["cargo", "subcommand", "dependencies", "sort", "check", "sort-fix"]
 categories = ["development-tools::cargo-plugins", "development-tools"]
-edition = "2021"
+edition = "2024"
 readme = "README.md"
 exclude = ["examp", "fixtures"]
 default-run = "cargo-sort-fix"
-rust-version = "1.82"
+# rust-version = "1.82"
 
 # [features]
 # fuzz = ["afl"]
