@@ -10,9 +10,9 @@ mod sort;
 #[cfg(test)]
 mod test_utils;
 
-const EXTRA_HELP: &str = "\
-    NOTE: formatting is applied after the check for sorting so \
-          sorted but unformatted toml will not cause a failure";
+const EXTRA_HELP: &str = r#"
+NOTE: formatting is applied after the check for sorting so sorted but unformatted toml will not cause a failure.
+"#;
 
 type IoResult<T> = Result<T, Box<dyn std::error::Error>>;
 
@@ -39,8 +39,19 @@ fn about_info() -> String {
     )
 }
 
+fn cargo_subcommand() -> String {
+    let name = crate_name!();
+    const PRIFIX: &str = "cargo-";
+    if name.starts_with(PRIFIX) {
+        let tail = name[PRIFIX.len()..].to_string();
+        format!("cargo {tail}")
+    } else {
+        name.to_owned()
+    }
+}
+
 #[derive(clap::Parser, Debug)]
-#[command(author = crate_authors!(", "), version = version_0!(), about = about_info(), bin_name = "cargo sort-fix", after_help = EXTRA_HELP)]
+#[command(author = crate_authors!(", "), version = version_0!(), about = about_info(), bin_name = cargo_subcommand(), after_help = EXTRA_HELP)]
 pub struct Cli {
     /// sets cwd, must contain a Cargo.toml file
     #[arg(value_name = "CWD")]
