@@ -10,6 +10,8 @@ mod sort;
 #[cfg(test)]
 mod test_utils;
 
+const CARGO_TOML: &str = "Cargo.toml";
+
 const EXTRA_HELP: &str = r#"
 NOTE: formatting is applied after the check for sorting so sorted but unformatted toml will not cause a failure.
 "#;
@@ -104,8 +106,8 @@ fn write_green<S: Display>(highlight: &str, msg: S) -> IoResult<()> {
 
 fn check_toml(path: &str, cli: &Cli, config: &Config) -> IoResult<bool> {
     let mut path = PathBuf::from(path);
-    if path.extension().is_none() {
-        path.push("Cargo.toml");
+    if path.is_dir() {
+        path.push(CARGO_TOML);
     }
 
     let krate = path.components().nth_back(1).ok_or("No crate folder found")?.as_os_str();
@@ -124,16 +126,15 @@ fn check_toml(path: &str, cli: &Cli, config: &Config) -> IoResult<bool> {
     let mut sorted = sort::sort_toml(&toml_raw, sort::MATCHER, cli.grouped, &config.table_order);
     let mut sorted_str = sorted.to_string();
 
-    let is_formatted =
-        // if no-format is not found apply formatting
-        if !cli.no_format || cli.check_format {
-            let original = sorted_str.clone();
-            fmt::fmt_toml(&mut sorted, &config);
-            sorted_str = sorted.to_string();
-            original == sorted_str
-        } else {
-            true
-        };
+    // if no-format is not found apply formatting
+    let origin_already_formatted = if !cli.no_format || cli.check_format {
+        let original = sorted_str.clone();
+        fmt::fmt_toml(&mut sorted, &config);
+        sorted_str = sorted.to_string();
+        original == sorted_str
+    } else {
+        true
+    };
 
     if config.crlf.unwrap_or(fmt::DEF_CRLF) && !sorted_str.contains("\r\n") {
         sorted_str = sorted_str.replace('\n', "\r\n");
@@ -144,25 +145,25 @@ fn check_toml(path: &str, cli: &Cli, config: &Config) -> IoResult<bool> {
         return Ok(true);
     }
 
-    let is_sorted = toml_raw == sorted_str;
+    let origin_already_sorted = toml_raw == sorted_str;
     if cli.check {
-        if !is_sorted {
+        if !origin_already_sorted {
             write_red("error: ", format!("Dependencies for {} are not sorted", krate.to_string_lossy()))?;
         }
 
-        if !is_formatted {
-            write_red("error: ", format!("Cargo.toml for {} is not formatted", krate.to_string_lossy()))?;
+        if !origin_already_formatted {
+            write_red("error: ", format!("{CARGO_TOML} for {} is not formatted", krate.to_string_lossy()))?;
         }
 
-        return Ok(is_sorted && is_formatted);
+        return Ok(origin_already_sorted && origin_already_formatted);
     }
 
-    if !is_sorted {
+    if !origin_already_sorted {
         std::fs::write(&path, &sorted_str)?;
-        let msg = format!("Cargo.toml for {:?} has been rewritten", krate.to_string_lossy());
+        let msg = format!("{CARGO_TOML} for {:?} has been rewritten", krate.to_string_lossy());
         write_green("Finished: ", msg)?;
     } else {
-        let msg = format!("Cargo.toml for {} is sorted already, no changes made", krate.to_string_lossy());
+        let msg = format!("{CARGO_TOML} for {} is sorted already, no changes made", krate.to_string_lossy());
         write_green("Finished: ", msg)?;
     }
 
