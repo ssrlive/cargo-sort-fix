@@ -188,13 +188,21 @@ fn _main() -> IoResult<()> {
     }
 
     if cli.workspace && is_posible_workspace {
-        let dir = filtered_matches[0].to_string();
-        let mut path = PathBuf::from(&dir);
-        if path.extension().is_none() {
-            path.push("Cargo.toml");
-        }
+        let mut file_path = PathBuf::from(&&filtered_matches[0]);
+        let dir = if file_path.is_file() {
+            let mut path_dir = file_path.clone();
+            path_dir.pop();
+            path_dir.to_string_lossy().to_string()
+        } else if file_path.is_dir() {
+            let path_dir = file_path.clone();
+            file_path.push(CARGO_TOML);
+            path_dir.to_string_lossy().to_string()
+        } else {
+            let m = format!("Item `{}` is not a file or directory", file_path.display());
+            return Err(m.into());
+        };
 
-        let raw_toml = read_to_string(&path).map_err(|_| format!("no file found at: {}", path.display()))?;
+        let raw_toml = read_to_string(&file_path).map_err(|_| format!("no file found at: {}", file_path.display()))?;
 
         let toml = raw_toml.parse::<DocumentMut>()?;
         let workspace = toml.get("workspace");
