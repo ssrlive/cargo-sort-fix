@@ -123,29 +123,28 @@ fn check_toml(path: &str, cli: &Cli, config: &Config) -> IoResult<bool> {
         config.crlf = Some(crlf);
     }
 
-    let mut sorted = sort::sort_toml(&toml_raw, sort::MATCHER, cli.grouped, &config.table_order);
-    let mut sorted_str = sorted.to_string();
+    let mut sorted_doc = sort::sort_toml(&toml_raw, sort::MATCHER, cli.grouped, &config.table_order);
 
     // if no-format is not found apply formatting
-    let origin_already_formatted = if !cli.no_format || cli.check_format {
-        let original = sorted_str.clone();
-        fmt::fmt_toml(&mut sorted, &config);
-        sorted_str = sorted.to_string();
-        original == sorted_str
+    let (origin_already_formatted, mut final_str) = if !cli.no_format || cli.check_format {
+        let before_fmt = sorted_doc.to_string();
+        fmt::fmt_toml(&mut sorted_doc, &config);
+        let final_str = sorted_doc.to_string();
+        (before_fmt == final_str, final_str)
     } else {
-        true
+        (true, sorted_doc.to_string())
     };
 
-    if config.crlf.unwrap_or(fmt::DEF_CRLF) && !sorted_str.contains("\r\n") {
-        sorted_str = sorted_str.replace('\n', "\r\n");
+    if config.crlf.unwrap_or(fmt::DEF_CRLF) && !final_str.contains("\r\n") {
+        final_str = final_str.replace('\n', "\r\n");
     }
 
     if cli.print {
-        print!("{sorted_str}");
+        print!("{final_str}");
         return Ok(true);
     }
 
-    let origin_already_sorted = toml_raw == sorted_str;
+    let origin_already_sorted = toml_raw == final_str;
     if cli.check {
         if !origin_already_sorted {
             write_red("error: ", format!("Dependencies for {} are not sorted", krate.to_string_lossy()))?;
@@ -159,7 +158,7 @@ fn check_toml(path: &str, cli: &Cli, config: &Config) -> IoResult<bool> {
     }
 
     if !origin_already_sorted {
-        std::fs::write(&path, &sorted_str)?;
+        std::fs::write(&path, &final_str)?;
         let msg = format!("{CARGO_TOML} for {:?} has been rewritten", krate.to_string_lossy());
         write_green("Finished: ", msg)?;
     } else {
