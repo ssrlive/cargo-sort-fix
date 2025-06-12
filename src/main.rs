@@ -212,10 +212,8 @@ fn _main() -> IoResult<()> {
             for member in ws.get("members").map_or_else(Vec::new, array_string_members) {
                 // TODO: a better test wether to glob?
                 if member.contains('*') || member.contains('?') {
-                    'globs: for entry in glob::glob(&format!("{dir}/{member}")).unwrap_or_else(|e| {
-                        write_red("error: ", format!("Glob failed: {e}")).unwrap();
-                        std::process::exit(1);
-                    }) {
+                    let paths = glob::glob(&format!("{dir}/{member}"))?;
+                    'globs: for entry in paths {
                         let path = entry?;
 
                         // The `check_toml` function expects only folders that it appends
