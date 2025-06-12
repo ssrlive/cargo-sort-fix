@@ -145,6 +145,7 @@ impl FromStr for Config {
 }
 
 fn fmt_value(value: &mut Value, config: &Config) {
+    // Note: Here `newline_pattern` is useless since the table will use `\n` insternally always.
     let newline_pattern = if config.crlf.unwrap_or(DEF_CRLF) { "\r\n" } else { "\n" };
     match value {
         Value::Array(arr) => {
@@ -243,6 +244,7 @@ fn fmt_value(value: &mut Value, config: &Config) {
 }
 
 fn fmt_table(table: &mut Table, config: &Config) {
+    // Note: Here `newline_pattern` is useless since the table will use `\n` insternally always.
     let newline_pattern = if config.crlf.unwrap_or(DEF_CRLF) { "\r\n" } else { "\n" };
 
     // Checks the header decor for blank lines
