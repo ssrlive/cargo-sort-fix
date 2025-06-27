@@ -258,8 +258,13 @@ fn _main() -> IoResult<()> {
 
     let mut flag = true;
     for sorted in filtered_matches.iter().map(|path| check_toml(path, &cli, &config)) {
-        if !(sorted?) {
-            flag = false;
+        match sorted {
+            Ok(true) => continue,
+            Ok(false) => flag = false,
+            Err(e) => {
+                write_red("error: ", e)?;
+                flag = false;
+            }
         }
     }
 
