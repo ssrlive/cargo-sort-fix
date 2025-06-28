@@ -16,7 +16,7 @@ const EXTRA_HELP: &str = r#"
 NOTE: formatting is applied after the check for sorting so sorted but unformatted toml will not cause a failure.
 "#;
 
-type Result<T> = std::result::Result<T, Box<dyn std::error::Error + Send + Sync + 'static>>;
+type Result<T, E = Box<dyn std::error::Error + Send + Sync + 'static>> = std::result::Result<T, E>;
 
 #[macro_export]
 macro_rules! version_0 {
