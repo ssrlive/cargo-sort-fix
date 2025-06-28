@@ -16,7 +16,7 @@ const EXTRA_HELP: &str = r#"
 NOTE: formatting is applied after the check for sorting so sorted but unformatted toml will not cause a failure.
 "#;
 
-type IoResult<T> = Result<T, Box<dyn std::error::Error>>;
+type Result<T> = std::result::Result<T, Box<dyn std::error::Error + Send + Sync + 'static>>;
 
 #[macro_export]
 macro_rules! version_0 {
@@ -88,7 +88,7 @@ pub struct Cli {
     pub order: Vec<String>,
 }
 
-fn write_red<S: Display>(highlight: &str, msg: S) -> IoResult<()> {
+fn write_red<S: Display>(highlight: &str, msg: S) -> Result<()> {
     let mut stderr = StandardStream::stderr(ColorChoice::Auto);
     stderr.set_color(ColorSpec::new().set_fg(Some(Color::Red)))?;
     write!(stderr, "{highlight}")?;
@@ -96,7 +96,7 @@ fn write_red<S: Display>(highlight: &str, msg: S) -> IoResult<()> {
     writeln!(stderr, "{msg}").map_err(Into::into)
 }
 
-fn write_green<S: Display>(highlight: &str, msg: S) -> IoResult<()> {
+fn write_green<S: Display>(highlight: &str, msg: S) -> Result<()> {
     let mut stdout = StandardStream::stdout(ColorChoice::Auto);
     stdout.set_color(ColorSpec::new().set_fg(Some(Color::Green)))?;
     write!(stdout, "{highlight}")?;
@@ -104,7 +104,7 @@ fn write_green<S: Display>(highlight: &str, msg: S) -> IoResult<()> {
     writeln!(stdout, "{msg}").map_err(Into::into)
 }
 
-fn check_toml(path: &str, cli: &Cli, config: &Config) -> IoResult<bool> {
+fn check_toml(path: &str, cli: &Cli, config: &Config) -> Result<bool> {
     let mut path = PathBuf::from(path);
     if path.is_dir() {
         path.push(CARGO_TOML);
@@ -169,7 +169,7 @@ fn check_toml(path: &str, cli: &Cli, config: &Config) -> IoResult<bool> {
     Ok(true)
 }
 
-fn _main() -> IoResult<()> {
+fn _main() -> Result<()> {
     let mut args: Vec<String> = std::env::args().collect();
     // remove "sort-fix" when invoked `cargo sort-fix` sort-fix is the first arg
     // https://github.com/rust-lang/cargo/issues/7653
@@ -208,35 +208,19 @@ fn _main() -> IoResult<()> {
         let workspace = toml.get("workspace");
         if let Some(Item::Table(ws)) = workspace {
             // The workspace excludes, used to filter members by
-            let excludes: Vec<&str> = ws.get("exclude").map_or_else(Vec::new, array_string_members);
-            for member in ws.get("members").map_or_else(Vec::new, array_string_members) {
-                // TODO: a better test wether to glob?
-                if member.contains('*') || member.contains('?') {
-                    let paths = glob::glob(&format!("{dir}/{member}"))?;
-                    'globs: for entry in paths {
-                        let path = entry?;
-
-                        // The `check_toml` function expects only folders that it appends
-                        // `Cargo.toml` onto
-                        if path.is_file() {
-                            continue;
-                        }
-
-                        // Since the glob function gives us actual paths we need to only
-                        // check if the relevant parts match so we can't just do
-                        // `excludes.contains(..)`
-                        let path_str = path.to_string_lossy();
-                        for excl in &excludes {
-                            if path_str.ends_with(excl) {
-                                continue 'globs;
-                            }
-                        }
-
-                        filtered_matches.push(path.display().to_string());
-                    }
-                } else {
-                    filtered_matches.push(format!("{dir}/{member}"));
+            let excludes = workspace_items_of_kind(&dir, ws, "exclude")?;
+            let members = workspace_items_of_kind(&dir, ws, "members")?;
+            'globs: for member in &members {
+                // The `check_toml` function expects only folders that it appends `Cargo.toml` onto
+                if member.is_file() {
+                    continue;
                 }
+                for excl in &excludes {
+                    if member == excl {
+                        continue 'globs;
+                    }
+                }
+                filtered_matches.push(member.display().to_string());
             }
         }
     }
@@ -276,6 +260,24 @@ fn _main() -> IoResult<()> {
 
 fn array_string_members(value: &Item) -> Vec<&str> {
     value.as_array().into_iter().flatten().filter_map(|s| s.as_str()).collect()
+}
+
+fn workspace_items_of_kind(dir: &str, ws: &toml_edit::Table, kind: &str) -> Result<Vec<PathBuf>> {
+    let mut paths = Vec::new();
+    for member in ws.get(kind).map_or_else(Vec::new, array_string_members) {
+        // TODO: a better test wether to glob?
+        if member.contains('*') || member.contains('?') {
+            let paths_iter = glob::glob(&format!("{dir}/{member}"))?;
+            for path in paths_iter {
+                paths.push(path?);
+            }
+        } else {
+            let mut path = PathBuf::from(dir);
+            path.push(member);
+            paths.push(path);
+        }
+    }
+    Ok(paths)
 }
 
 fn main() {
