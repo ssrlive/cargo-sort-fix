@@ -321,7 +321,7 @@ fn sort_lexicographical(first_table: Option<usize>, heading_order: &BTreeMap<(us
             // Do not reorder the unsegmented tables
             if nested > 1 {
                 if let Some(table) = table {
-                    table.set_position(first_table_idx + idx);
+                    table.set_position((first_table_idx + idx) as isize);
                 }
             }
         }
@@ -441,7 +441,7 @@ fn sort_by_ordering(ordering: &[String], heading_order: &BTreeMap<(usize, String
     }
 }
 
-fn walk_tables_set_position(table: &mut Table, idx: &mut usize) {
+fn walk_tables_set_position(table: &mut Table, idx: &mut isize) {
     for (_, item) in table.iter_mut() {
         match item {
             Item::Table(tab) => {
