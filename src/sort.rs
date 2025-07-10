@@ -65,19 +65,18 @@ pub(crate) fn sort_toml(input: &str, matcher: Matcher<'_>, group: bool, ordering
         // Since this `&mut toml[&heading]` is like
         // `SomeMap.entry(key).or_insert(Item::None)` we only want to do it if we
         // know the heading is there already
-        if toml.as_table().contains_key(heading) {
-            if let Item::Table(table) = &mut toml[heading] {
-                if table.contains_key(key) {
-                    match &mut table[key] {
-                        Item::Value(Value::Array(arr)) => {
-                            sort_array(arr);
-                        }
-                        Item::Table(table) => {
-                            sort_table(table, group);
-                        }
-                        _ => {}
-                    }
+        if toml.as_table().contains_key(heading)
+            && let Item::Table(table) = &mut toml[heading]
+            && table.contains_key(key)
+        {
+            match &mut table[key] {
+                Item::Value(Value::Array(arr)) => {
+                    sort_array(arr);
                 }
+                Item::Table(table) => {
+                    sort_table(table, group);
+                }
+                _ => {}
             }
         }
     }
@@ -87,18 +86,18 @@ pub(crate) fn sort_toml(input: &str, matcher: Matcher<'_>, group: bool, ordering
     for (idx, (head, item)) in toml.as_table_mut().iter_mut().enumerate() {
         let mut target_tables: TargetTablePaths = BTreeMap::new();
         let item_key = head.get();
-        if item_key == TARGET {
-            if let Some(table) = item.as_table() {
-                for &key in matcher.heading {
-                    let mut path = vec![item_key];
-                    let mut deps_tables = vec![];
-                    nested_tables_with_key(table, &mut path, key, &mut deps_tables);
-                    let deps_tables = deps_tables
-                        .iter()
-                        .map(|p| p.iter().map(|&s| s.to_owned()).collect::<Vec<_>>())
-                        .collect::<Vec<_>>();
-                    target_tables.entry(key.to_owned()).or_default().extend(deps_tables);
-                }
+        if item_key == TARGET
+            && let Some(table) = item.as_table()
+        {
+            for &key in matcher.heading {
+                let mut path = vec![item_key];
+                let mut deps_tables = vec![];
+                nested_tables_with_key(table, &mut path, key, &mut deps_tables);
+                let deps_tables = deps_tables
+                    .iter()
+                    .map(|p| p.iter().map(|&s| s.to_owned()).collect::<Vec<_>>())
+                    .collect::<Vec<_>>();
+                target_tables.entry(key.to_owned()).or_default().extend(deps_tables);
             }
         }
 
@@ -296,10 +295,10 @@ fn sort_by_group(table: &mut Table) {
         let group_decor = group_decor.remove(&idx);
 
         for (idx, (mut k, v)) in group.into_iter().enumerate() {
-            if idx == 0 {
-                if let Some(group_decor) = group_decor.clone() {
-                    k = k.with_leaf_decor(group_decor);
-                }
+            if idx == 0
+                && let Some(group_decor) = group_decor.clone()
+            {
+                k = k.with_leaf_decor(group_decor);
             }
 
             table.insert_formatted(&k, v.clone());
@@ -319,10 +318,10 @@ fn sort_lexicographical(first_table: Option<usize>, heading_order: &BTreeMap<(us
                 table = table.and_then(|t| t[seg].as_table_mut());
             }
             // Do not reorder the unsegmented tables
-            if nested > 1 {
-                if let Some(table) = table {
-                    table.set_position((first_table_idx + idx) as isize);
-                }
+            if nested > 1
+                && let Some(table) = table
+            {
+                table.set_position((first_table_idx + idx) as isize);
             }
         }
     }
